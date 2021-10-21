@@ -31,8 +31,8 @@ sqlattDF = pd.read_sql_query('SELECT * FROM maxattribute', sqlsrv)
 """ This is for DB2"""
 conn_str='database=maxdb;hostname=10.0.0.18;port=50005;protocol=tcpip;uid=maximo;pwd=JLL@Maximo95'
 db2 = ibm_db.connect(conn_str,'','')
-#db2 = ibm_db.connect('maxdb', 'maximo', 'JLL@Maximo95')
-#db2 = create_engine('ibm_db_sa://maximo:JLL@Maximo95@10.0.0.18:50005/maxdb')
+#db2 = ibm_db.connect('maxdb', 'maximo', 'US@Maximo95')
+#db2 = create_engine('ibm_db_sa://maximo:US@Maximo95@10.0.0.18:50005/maxdb')
 
 #db2engine = create_engine("db2+ibm_db://10.0.0.18:50005/maxdb")
 db2conn = ibm_db_dbi.Connection(db2)
