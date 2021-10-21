@@ -1,7 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-Author: Utkarsh Shukla
-Created Date: 19 October, 2021
+#
+# Author : Utkarsh Shukla
+# Created date: 20 October, 2021
+# Version: 1.0
+# Description: Quick POC to Compare content in two different DB even if DBMS is different
+# LANGUAGE: Pyhton
+# Script: CompareDB
+
 This is a Prototype Script file.
 """
 import pandas as pd
