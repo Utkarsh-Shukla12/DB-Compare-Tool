@@ -23,7 +23,7 @@ username = 'maximo'
 password = 'maximo@123' 
 sqlsrv = pyodbc.connect('DRIVER={SQL Server};SERVER='+server+';DATABASE='+database+';UID='+username+';PWD='+ password)
 cursor = sqlsrv.cursor()
-sqlattDF = pd.read_sql_query('SELECT * FROM maxattribute', sqlsrv)
+
 
 
 
@@ -36,8 +36,12 @@ db2 = ibm_db.connect(conn_str,'','')
 
 #db2engine = create_engine("db2+ibm_db://10.0.0.18:50005/maxdb")
 db2conn = ibm_db_dbi.Connection(db2)
-asset = "select * from maxattribute"
-db2attDF = pd.read_sql(asset, db2conn)
+
+
+# Execute Query on DB 
+query = 'SELECT * FROM maxattribute order by objectname asc'
+sqlattDF = pd.read_sql_query(query, sqlsrv)
+db2attDF = pd.read_sql(query, db2conn)
 # Compare the Attributes 
 #print('SQL Maxattributes are ' + str(db2attDF.shape))
 #print('DB2 Maxattributes are ' + str(sqlattDF.shape))
