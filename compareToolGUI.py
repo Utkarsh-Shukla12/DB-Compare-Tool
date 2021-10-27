@@ -19,11 +19,10 @@ myLabel1 = Label (root, text = "Utkarsh Shukla!!")
 
 myLabel2 = Label (root, text = "My Name is Utkarsh Shukla!! :)")
 
-myLabel3 = Label (root, text = "                         ->     ")
+
 # Showing it onto the Screen
 
 myLabel1.grid(row = 0, column = 0)
-myLabel3.grid(row = 0, column = 2)
 myLabel2.grid(row = 1, column = 5)
 
 root.mainloop()
