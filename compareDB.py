@@ -14,7 +14,43 @@ import pandas as pd
 import ibm_db
 import ibm_db_dbi
 import pyodbc 
+import datetime
 
+
+begin_time = datetime.datetime.now()
+
+
+###-----------------------------Define your functions------------------------------------#
+
+def writeExcel(fileName, dataFrame):
+    # determining the name of the file
+    file_name = fileName + '.xlsx'
+  
+    # saving the excel
+    dataFrame.to_excel(file_name)
+    print(  'Missing Entries is written to Excel File successfully.')
+  
+def missingEntries(source, traget):
+    diff_df = pd.merge(source, traget, how='outer', indicator='Exist')
+    diff_df = diff_df.loc[diff_df['Exist'] != 'both']
+    missing_Target = diff_df.loc[diff_df['Exist'] != 'right_only']
+    missing_Source = diff_df.loc[diff_df['Exist'] != 'left_only']
+    writeExcel('missing_entries_from_SQL_Server', missing_Target)
+    writeExcel('missing_entries_from_DB2', missing_Source)
+    
+def dataCorrection(source, traget):
+    source.columns= source.columns.str.strip().str.upper()
+    traget.columns= source.columns.str.strip().str.upper()
+
+def dropNonColumns(source, traget):
+    source = source.drop(labels="ROWSTAMP", axis=1)
+    traget = traget.drop(labels="ROWSTAMP", axis=1)
+    source = source.drop(labels="MAXOBJECTID", axis=1)
+    traget = traget.drop(labels="MAXOBJECTID", axis=1)
+
+def compareTables(source, traget):
+    print('This is US')
+#-------------------------------------------------------------------------------------------#   
 
 """ This is for Sql Server """
 server = '10.0.0.23' 
@@ -23,7 +59,7 @@ username = 'maximo'
 password = 'maximo@123' 
 sqlsrv = pyodbc.connect('DRIVER={SQL Server};SERVER='+server+';DATABASE='+database+';UID='+username+';PWD='+ password)
 cursor = sqlsrv.cursor()
-
+sqlattDF = pd.read_sql_query('SELECT * FROM maxobject order by objectname desc', sqlsrv)
 
 
 
@@ -31,44 +67,29 @@ cursor = sqlsrv.cursor()
 """ This is for DB2"""
 conn_str='database=maxdb;hostname=10.0.0.18;port=50005;protocol=tcpip;uid=maximo;pwd=JLL@Maximo95'
 db2 = ibm_db.connect(conn_str,'','')
-#db2 = ibm_db.connect('maxdb', 'maximo', 'US@Maximo95')
-#db2 = create_engine('ibm_db_sa://maximo:US@Maximo95@10.0.0.18:50005/maxdb')
+
 
 #db2engine = create_engine("db2+ibm_db://10.0.0.18:50005/maxdb")
 db2conn = ibm_db_dbi.Connection(db2)
-
-
-# Execute Query on DB 
-query = 'SELECT * FROM maxattribute order by objectname asc'
-sqlattDF = pd.read_sql_query(query, sqlsrv)
-db2attDF = pd.read_sql(query, db2conn)
+asset = "select * from maxobject order by objectname desc"
+db2attDF = pd.read_sql(asset, db2conn)
 # Compare the Attributes 
-#print('SQL Maxattributes are ' + str(db2attDF.shape))
-#print('DB2 Maxattributes are ' + str(sqlattDF.shape))
-#db2attDF.compare(sqlattDF)
+
 # %%
+
+#------------------------------------------ Main Program -----------------------------------#
+    
+dataCorrection(db2attDF, sqlattDF)
+###--------------------- Drop Non-Usefull Columns ------------------------------------------#
 db2attDF = db2attDF.drop(labels="ROWSTAMP", axis=1)
-sqlattDF = sqlattDF.drop(labels="rowstamp", axis=1)
+sqlattDF = sqlattDF.drop(labels="ROWSTAMP", axis=1)
+db2attDF = db2attDF.drop(labels="MAXOBJECTID", axis=1)
+sqlattDF = sqlattDF.drop(labels="MAXOBJECTID", axis=1)
+#-------------------------------------------------------------------------------------------# 
 
-#db2attDF.info()
-#sqlattDF.info()
+missingEntries(db2attDF, sqlattDF)
+execution_time = datetime.datetime.now() - begin_time
 
-
+print (execution_time)
 ## -> 
 
-db2attDF.rename(columns = lambda x : x + '_file1', inplace = True)
-sqlattDF.rename(columns = lambda x : x + '_file2', inplace = True)
-# %%
-df_join = db2attDF.merge(right = sqlattDF,
-                    left_on = db2attDF.columns.to_list(),
-                    right_on = sqlattDF.columns.to_list(),
-                    how = 'outer')
-
-records_present_in_db2attDF_not_in_sqlattDF = df_join.loc[df_join[sqlattDF.columns.to_list()].isnull().all(axis = 1), db2attDF.columns.to_list()]
-# %%
-records_present_in_sqlattDF_not_in_db2attDF = df_join.loc[df_join[db2attDF.columns.to_list()].isnull().all(axis = 1), sqlattDF.columns.to_list()]
-
-print (records_present_in_db2attDF_not_in_sqlattDF)
-print (records_present_in_sqlattDF_not_in_db2attDF)
-#print (db2attDF)
-#print (sqlattDF)
