@@ -3,6 +3,7 @@
 #
 # Author : Utkarsh Shukla
 # Created date: 20 October, 2021
+# Last Update: 1 November,2021
 # Version: 1.0
 # Description: Quick POC to Compare content in two different DB even if DBMS is different
 # LANGUAGE: Pyhton
