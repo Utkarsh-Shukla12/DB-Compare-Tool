@@ -11,11 +11,13 @@
 
 This is a Prototype Script file.
 """
+
 import pandas as pd
 import ibm_db
 import ibm_db_dbi
 import pyodbc 
 import datetime
+from createPDF import dfToPdf
 
 
 begin_time = datetime.datetime.now()
@@ -35,6 +37,8 @@ def writeExcel(fileName, dataFrame):
     print(  'Missing Entries is written to '+ str(file_name)+' successfully.')
   
 def missingEntries(source, traget):
+    source.sort_values(by=['OBJECTNAME'], inplace=True, ascending=False)
+    traget.sort_values(by=['OBJECTNAME'], inplace=True, ascending=False)
     diff_df = pd.merge(source, traget, how='outer', indicator='Exist')
     diff_df = diff_df.loc[diff_df['Exist'] != 'both']
     missing_Target = diff_df.loc[diff_df['Exist'] != 'right_only']
@@ -42,6 +46,13 @@ def missingEntries(source, traget):
     writeExcel('missing_entries_from_SQL_Server', missing_Target)
     writeExcel('missing_entries_from_DB2', missing_Source)
     return missing_Source,missing_Target
+
+def missingEntries_(source,traget):
+    #print(source["OBJECTNAME"].values.tolist())
+    writeExcel('missing_From_SQL_S', source[~source.OBJECTNAME.isin(traget["OBJECTNAME"].values.tolist())])
+    writeExcel('missing_From_DB2' , traget[~traget.OBJECTNAME.isin(source["OBJECTNAME"].values.tolist())])
+    
+    
     
 def dataCorrection(source, traget):
     source.columns= source.columns.str.strip().str.upper()
@@ -67,7 +78,7 @@ def compareTables(source, missing_Source, traget,missing_Target):
     #writeExcel('CleanSQL', targetClean)
     comparisionDF = sourceClean.compare(targetClean, keep_equal=False)
     if comparisionDF.shape[0] == 0:
-        print('There are no disparity in source and Table to display')
+        print('There are no disparity in source and Target to display')
     else:
         writeExcel('comparisionDF', comparisionDF)
         
@@ -83,7 +94,7 @@ username = 'maximo'
 password = 'maximo@123' 
 sqlsrv = pyodbc.connect('DRIVER={SQL Server};SERVER='+server+';DATABASE='+database+';UID='+username+';PWD='+ password)
 cursor = sqlsrv.cursor()
-sqlattDF = pd.read_sql_query('SELECT * FROM maxobject order by objectname desc', sqlsrv)
+sqlattDF = pd.read_sql_query('SELECT * FROM maxobject', sqlsrv)
 
 
 
@@ -95,7 +106,7 @@ db2 = ibm_db.connect(conn_str,'','')
 
 #db2engine = create_engine("db2+ibm_db://10.0.0.18:50005/maxdb")
 db2conn = ibm_db_dbi.Connection(db2)
-asset = "select * from maxobject order by objectname desc"
+asset = "select * from maxobject order"
 db2attDF = pd.read_sql(asset, db2conn)
 # Compare the Attributes 
 
@@ -111,9 +122,12 @@ db2attDF = db2attDF.drop(labels="MAXOBJECTID", axis=1)
 sqlattDF = sqlattDF.drop(labels="MAXOBJECTID", axis=1)
 #-------------------------------------------------------------------------------------------# 
 
-missing_Source,missing_Target = missingEntries(db2attDF, sqlattDF)
+#missing_Source,missing_Target = missingEntries(db2attDF, sqlattDF)
+missingEntries_(db2attDF, sqlattDF)
 
-compareTables(db2attDF, missing_Source, sqlattDF, missing_Target)
+#compareTables(db2attDF, missing_Source, sqlattDF, missing_Target)
+
+#dfToPdf(missing_Source, 'missing_Entries')
 
 execution_time = datetime.datetime.now() - begin_time
 
